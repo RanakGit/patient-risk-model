@@ -2,6 +2,10 @@
 
 A data science project completed during the Clinical Research and Data Science Internship at the **Institute of Innovations** (October 2025).
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://a4gnm2nuhnljly6cwnlgmz.streamlit.app/)
+
+Live app: [Vital Signs Analyzer](https://a4gnm2nuhnljly6cwnlgmz.streamlit.app/)
+
 ## Overview
 This project processes clinical vital signs data, performs statistical cleaning and preprocessing, categorizes patient clusters using unsupervised learning (K-Means), and predicts patient risk levels using supervised machine learning (Random Forest Classifier).
 
@@ -23,12 +27,7 @@ This project processes clinical vital signs data, performs statistical cleaning 
 4. Upload the locally generated `vital_signs_clean.csv` in the browser to view clusters, risk-rule counts, feature importance, and an illustrative prediction.
 5. To generate the Excel output from the command line, run `python patient_risk_model.py`.
 
-## Deploy with GitHub and Streamlit Community Cloud
-GitHub stores the source code; Streamlit Community Cloud runs the interactive app.
+## Deployment
+The source is hosted in [RanakGit/patient-risk-model](https://github.com/RanakGit/patient-risk-model), and Streamlit Community Cloud runs the live app above. The repository is public; `.gitignore` excludes CSV and Excel files so patient datasets and generated reports are not uploaded.
 
-1. Create a GitHub repository named `patient-risk-model` under your GitHub account.
-2. Push this project to that repository. The `.gitignore` excludes CSV and Excel files so patient datasets and generated reports are not uploaded.
-3. Sign in to [Streamlit Community Cloud](https://share.streamlit.io/) with GitHub and authorize access to the repository.
-4. Choose `app.py` as the app file and deploy.
-
-The deployed app accepts a cleaned CSV upload and analyzes it in memory. Do not upload identifiable or sensitive patient data to a public app. Restrict access using the hosting platform's available options. The risk rule and model are educational only and are not clinically validated.
+The app accepts a cleaned CSV upload and analyzes it in memory. Do not upload identifiable or sensitive patient data to this public app. The risk rule and model are educational only and are not clinically validated.
