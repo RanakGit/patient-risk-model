@@ -28,9 +28,14 @@ if uploaded_file is not None:
         st.error(f"Could not read the uploaded CSV: {error}")
     else:
         try:
-            data, cluster_summary, model, feature_importance, dropped_rows = (
-                analyze_vitals(source)
-            )
+            (
+                data,
+                cluster_summary,
+                model,
+                feature_importance,
+                dropped_rows,
+                evaluation,
+            ) = analyze_vitals(source)
         except ValueError as error:
             st.error(str(error))
         else:
@@ -60,6 +65,48 @@ if uploaded_file is not None:
             with right:
                 st.subheader("Cluster averages")
                 st.dataframe(cluster_summary.round(2), use_container_width=True)
+
+            st.subheader("Model accuracy")
+            st.info(
+                "The target labels are created by the app's rule "
+                "`Temp > 37 °C or heart_rate > 85`. This holdout score measures "
+                "how well the Random Forest reproduces that rule—not accuracy "
+                "against independently observed clinical outcomes."
+            )
+            if evaluation is None:
+                st.warning(
+                    "Holdout agreement is unavailable. At least 8 valid rows "
+                    "and at least 2 examples in each rule-generated class are "
+                    "required."
+                )
+            else:
+                accuracy_col, baseline_col, holdout_col = st.columns(3)
+                with accuracy_col:
+                    st.metric(
+                        "Holdout agreement with rule",
+                        f"{evaluation['accuracy']:.1%}",
+                    )
+                with baseline_col:
+                    st.metric(
+                        "Majority-class baseline",
+                        f"{evaluation['baseline_accuracy']:.1%}",
+                    )
+                with holdout_col:
+                    st.metric("Holdout records", evaluation["test_size"])
+
+                confusion = pd.DataFrame(
+                    evaluation["confusion_matrix"],
+                    index=["Actual Low", "Actual High"],
+                    columns=["Predicted Low", "Predicted High"],
+                )
+                st.caption("Confusion matrix for holdout predictions vs. rule labels")
+                st.dataframe(confusion, use_container_width=True)
+                st.caption(
+                    "This is a deterministic 25% stratified holdout "
+                    "(random_state=42). Because labels come from the same "
+                    "threshold rule, even a perfect score does not establish "
+                    "clinical predictive accuracy."
+                )
 
             st.subheader("Model feature importance")
             st.bar_chart(feature_importance.to_frame())

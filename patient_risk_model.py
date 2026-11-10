@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 FEATURES = ["age", "bp", "heart_rate", "Temp"]
@@ -48,6 +50,32 @@ def analyze_vitals(data: pd.DataFrame):
         (df["Temp"] > 37) | (df["heart_rate"] > 85), "High", "Low"
     )
     labels = (df["RiskLevel"] == "High").astype(int)
+
+    evaluation = None
+    label_counts = labels.value_counts()
+    if len(label_counts) == 2 and label_counts.min() >= 2 and len(df) >= 8:
+        train_x, test_x, train_y, test_y = train_test_split(
+            df[FEATURES],
+            labels,
+            test_size=0.25,
+            random_state=42,
+            stratify=labels,
+        )
+        evaluation_model = RandomForestClassifier(random_state=42)
+        evaluation_model.fit(train_x, train_y)
+        test_predictions = evaluation_model.predict(test_x)
+        majority_label = train_y.value_counts().idxmax()
+        evaluation = {
+            "accuracy": accuracy_score(test_y, test_predictions),
+            "test_size": len(test_y),
+            "baseline_accuracy": accuracy_score(
+                test_y, np.full(len(test_y), majority_label)
+            ),
+            "confusion_matrix": confusion_matrix(
+                test_y, test_predictions, labels=[0, 1]
+            ),
+        }
+
     model = RandomForestClassifier(random_state=42)
     model.fit(df[FEATURES], labels)
 
@@ -55,7 +83,7 @@ def analyze_vitals(data: pd.DataFrame):
         model.feature_importances_, index=FEATURES, name="Importance"
     ).sort_values()
 
-    return df, cluster_summary, model, feature_importance, dropped_rows
+    return df, cluster_summary, model, feature_importance, dropped_rows, evaluation
 
 
 def main():
@@ -70,12 +98,25 @@ def main():
     print("Dataset information:")
     source.info()
 
-    df, cluster_summary, model, feature_importance, dropped_rows = analyze_vitals(
-        source
-    )
+    (
+        df,
+        cluster_summary,
+        model,
+        feature_importance,
+        dropped_rows,
+        evaluation,
+    ) = analyze_vitals(source)
     print(f"\nRows excluded for missing or invalid values: {dropped_rows}")
     print("\nCluster Summary:\n", cluster_summary)
     print("\nRisk level counts:\n", df["RiskLevel"].value_counts())
+    if evaluation is not None:
+        print(
+            "\nHoldout agreement with rule-generated labels:",
+            f"{evaluation['accuracy']:.1%}",
+            f"({evaluation['test_size']} holdout rows)",
+        )
+    else:
+        print("\nHoldout evaluation unavailable: dataset is too small or has one class.")
 
     new_patient = pd.DataFrame(
         [[72, 160, 105, 38.5]],
